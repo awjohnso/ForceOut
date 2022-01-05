@@ -2,7 +2,7 @@
  Scripts to forcibly reboot a lab computer if a user is logged in too long.
  Makes use of a launch agent, a launch daemon, and two scripts:
 
-**/Library/LaunchDaemons/edu.stonybrook.doit.idletime.plist**
+==**/Library/LaunchDaemons/edu.stonybrook.doit.idletime.plist**==
 	Runs the script: /usr/local/bin/idletime.zsh every two minutes.
 
 **/Library/LaunchAgents/edu.stonybrook.doit.killsession.plist**
