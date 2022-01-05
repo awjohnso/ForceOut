@@ -4,6 +4,10 @@
 # Date: 2021.09.30
 # Organization: Stony Brook University/DoIT
 #
+# Version: 1.50
+# Added the logging of a user logging off to our user tracking database.
+#
+#
 # Version: 1.01
 # Added a check to see if a movie, or zoom is playing aka checking for PreventUserIdleDisplaySleep.
 # Should that be set to 1, then don't run and exit so not to interrupt a user's session.
@@ -36,6 +40,7 @@ idleTime=$( /usr/bin/defaults read /Library/Preferences/edu.stonybrook.doit.idle
 text=$( /usr/bin/defaults read /Library/Preferences/edu.stonybrook.doit.idletime description )
 
 	# Setup some variables.
+myVers="1.50"
 jamfHelperPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 windowtype="utility"
 title="Idle Warning"
@@ -45,6 +50,8 @@ description="If you are inactive for ${text} more minutes you will be logged out
 button1="Logout"
 button2="Cancel"
 icon="/usr/local/bin/Warning.png"
+LogoutLog="/Users/Shared/SINC-Logout.log"
+me=$(/usr/bin/basename ${0})
 
 	# Check to see if a movie, zoom, or other program is preventing sleep or screensaver action.
 	# Check PreventUserIdleDisplaySleep: 1 don't sleep, 0 ok to sleep.
@@ -66,6 +73,30 @@ if [ ${myIdleTime} -ge 300000000000 ]; then
 		# If Logout button (0) is returned either by timeout or user click, then kill the session.
 	if [[ ${myButton} -eq 0 ]]; then
 		/bin/echo "$( /bin/date | /usr/bin/awk '{print $1, $2, $3, $4}' ) $( /usr/sbin/scutil --get LocalHostName ) $( /usr/bin/basename ${0} )[$$]: Killing ${loggedInUser}'s session!" >> /Users/Shared/idletime.log
+			
+		/bin/echo "" >> ${LogoutLog}
+		/bin/echo "$( /bin/date | /usr/bin/awk '{print $1, $2, $3, $4}' ) $( /usr/sbin/scutil --get LocalHostName ) ${me}[$$]: Starting ${me}, v${myVers}" >> ${LogoutLog}
+
+			# Get user, home directory and computer name.
+		myUser=$( /usr/bin/defaults read /Library/Preferences/com.apple.loginwindow lastUserName )
+		myHome=$( /usr/bin/dscl . read /Users/${myUser} home 2>/dev/null | /usr/bin/awk '{print $2}' )
+		compName=$( /usr/sbin/networksetup -getcomputername )
+		/bin/echo "$( /bin/date | /usr/bin/awk '{print $1, $2, $3, $4}' ) $( /usr/sbin/scutil --get LocalHostName ) ${me}[$$]: User: ${myUser}" >> ${LogoutLog}
+		/bin/echo "$( /bin/date | /usr/bin/awk '{print $1, $2, $3, $4}' ) $( /usr/sbin/scutil --get LocalHostName ) ${me}[$$]: Home: ${myHome}" >> ${LogoutLog}
+		/bin/echo "$( /bin/date | /usr/bin/awk '{print $1, $2, $3, $4}' ) $( /usr/sbin/scutil --get LocalHostName ) ${me}[$$]: Computer: ${compName}" >> ${LogoutLog}
+
+			# Touch the home directory as a time stamp so the removal script will better assess.
+		/bin/echo "$( /bin/date | /usr/bin/awk '{print $1, $2, $3, $4}' ) $( /usr/sbin/scutil --get LocalHostName ) ${me}[$$]: Touching ${myHome}." >> ${LogoutLog}
+		/usr/bin/touch ${myHome}
+			 # Set the volume to zero.
+		/bin/echo "$( /bin/date | /usr/bin/awk '{print $1, $2, $3, $4}' ) $( /usr/sbin/scutil --get LocalHostName ) ${me}[$$]: Setting volume to zero" >> ${LogoutLog}
+		/usr/bin/osascript -e "set volume 0."
+
+			# SINC Logoff Tracker. Curl the data up to the web site.   !! ONLY WORKS FROM SINC NETWORK !!
+		myResult=$(/usr/bin/curl -s -X POST -F Username=${myUser} -F ComputerName=${compName} https://stats.sinc.stonybrook.edu/api/logoff/update)
+		/bin/echo "$( /bin/date | /usr/bin/awk '{print $1, $2, $3, $4}' ) $( /usr/sbin/scutil --get LocalHostName ) ${me}[$$]: ${myResult}" >> ${LogoutLog}
+		/bin/echo "$( /bin/date | /usr/bin/awk '{print $1, $2, $3, $4}' ) $( /usr/sbin/scutil --get LocalHostName ) ${me}[$$]: Ending ${me}, v${myVers}" >> ${LogoutLog}
+
 			# Drop a trigger file to reboot the system.
 		/usr/bin/touch /Users/Shared/ForceOut/trigger
 		exit 0
