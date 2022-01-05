@@ -21,5 +21,8 @@
 	Preflight script for the pkg to distribute the above. Unloads the `/Library/LaunchDaemons/edu.stonybrook.doit.idletime.plist` before the package runs.
 	
 **PKG Postflight: postflight.zsh**
-	Postflight Checks the existing computer name against a list of comptuers to see which idletime to set in /Library/Preferences/edu.stonybrook.idletime.plist. Creates the trigger directory in `/Users/Shared/ForceOut`. Sets permissions on this directory to be `root:admin`, `666`, and makes it invisible to the Finder. Finally loads `/Library/LaunchDaemons/edu.stonybrook.doit.idletime.plist` so a reboot is not necessary.
+	Postflight Checks the existing computer name against a list of comptuers to see which idletime to set in /Library/Preferences/edu.stonybrook.idletime.plist. Creates the trigger directory in `/Users/Shared/ForceOut`. Sets permissions on this directory to be `root:admin`, `666`, and makes it invisible to the Finder.
 
+Create the log file in /Users/Shared/idletime.log and sets it to `root:admin`, `666`, and makes it invisible to the Finder.
+
+Finally loads `/Library/LaunchDaemons/edu.stonybrook.doit.idletime.plist` so a reboot is not necessary.
